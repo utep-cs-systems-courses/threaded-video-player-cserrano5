@@ -38,3 +38,29 @@ class ExtractFramesThread(Thread):
 
     
         
+#convert to gray scale thread class
+class ConvertToGrayScaleThread(Thread):
+    def __init__(self, semaphore):
+        Thread.__init__(self)
+        self.vidcap = cv2.VideoCapture(clipName)                            #this opens video clip
+        self.vidlen = int(self.vidcap.get(cv2.CAP_PROP_FRAME_COUNT))-1      #videos max frames
+        self.queuecap = framecap                   #frame to extract before moving to next thread
+        self.count = 0                                                      #counts frames done
+        self.semaphore = semaphore                                          #lock
+
+    def run(self):                                                          #this runs code
+        while True:
+            self.semaphore.acquire()                                        #lock
+            if frameQueue and len(grayQueue) <= self.queuecap: #check frame was read & gray notfull
+                print(f'Converting frame {self.count} to grayscale')
+                inputFrame = frameQueue.pop(0)  #gets the first frame in queue
+                grayScaleFrame = cv2.cvtColor(inputFrame, cv2.COLOR_BGR2GRAY) #converts to gray
+                grayQueue.append(grayScaleFrame)               #appends gray queue
+                self.count = self.count + 1                    #increase frame count
+            self.semaphore.release()
+
+            if self.count == self.vidlen:
+                print("Converting to gray scale has been done")
+                break
+        return
+        
