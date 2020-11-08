@@ -64,3 +64,32 @@ class ConvertToGrayScaleThread(Thread):
                 break
         return
         
+
+#display frame thread class
+class DisplayFrameThread(Thread):
+    def __init__(self,semaphore):
+        Thread.__init__(self)
+        self.vidcap = cv2.VideoCapture(clipName)                             #this opens video clip
+        self.vidlen = int(self.vidcap.get(cv2.CAP_PROP_FRAME_COUNT))-1       #videos max frames
+        self.delay = 42                                                 #time each frame is delayed
+        self.count = 0                                                      #counts num frames done
+        self.semaphore = semaphore                                           #lock
+
+    def run(self):
+        while True:
+            self.semaphore.acquire()                                        #lock
+            if grayQueue:
+                print(f'Displaying frame {self.count}')
+                inputFrame = grayQueue.pop(0)                    #pop the first frame in gray queue
+                cv2.inshow('video', inputFrame)                    #displays the frame
+                self.count = self.count + 1                        #increase frame count
+                if cv2.waitKey(self.delay) and 0xFF == ord("q"):   #delays frame
+                    break
+            self.semaphore.release()
+
+            if self.count == self.vidlen:
+                print("Displaying frames has been done.")
+                break
+        cv2.destroyAllWindows()                                 #this closes all windows of display
+        return
+        
