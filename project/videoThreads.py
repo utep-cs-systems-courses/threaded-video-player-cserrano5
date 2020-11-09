@@ -25,7 +25,7 @@ class ExtractFramesThread(Thread):
         while True:
             self.semaphore.acquire()                                        #lock
             if success and len(frameQueue) <= self.queuecap: #checks frame was read & queue notfull
-                print(f'Reading frame {self.count}')
+                print('Reading frame {self.count}')
                 frameQueue.append(image)                     #append to frame queue
                 success, image = self.vidcap.read()          #reads next frame
                 self.count = self.count + 1                  #increases count
@@ -44,7 +44,7 @@ class ConvertToGrayScaleThread(Thread):
         Thread.__init__(self)
         self.vidcap = cv2.VideoCapture(clipName)                            #this opens video clip
         self.vidlen = int(self.vidcap.get(cv2.CAP_PROP_FRAME_COUNT))-1      #videos max frames
-        self.queuecap = framecap                   #frame to extract before moving to next thread
+        self.queuecap = frameCap                   #frame to extract before moving to next thread
         self.count = 0                                                      #counts frames done
         self.semaphore = semaphore                                          #lock
 
@@ -52,7 +52,7 @@ class ConvertToGrayScaleThread(Thread):
         while True:
             self.semaphore.acquire()                                        #lock
             if frameQueue and len(grayQueue) <= self.queuecap: #check frame was read & gray notfull
-                print(f'Converting frame {self.count} to grayscale')
+                print('Converting frame {self.count} to grayscale')
                 inputFrame = frameQueue.pop(0)  #gets the first frame in queue
                 grayScaleFrame = cv2.cvtColor(inputFrame, cv2.COLOR_BGR2GRAY) #converts to gray
                 grayQueue.append(grayScaleFrame)               #appends gray queue
@@ -79,7 +79,7 @@ class DisplayFrameThread(Thread):
         while True:
             self.semaphore.acquire()                                        #lock
             if grayQueue:
-                print(f'Displaying frame {self.count}')
+                print('Displaying frame {self.count}')
                 inputFrame = grayQueue.pop(0)                    #pop the first frame in gray queue
                 cv2.inshow('video', inputFrame)                    #displays the frame
                 self.count = self.count + 1                        #increase frame count
@@ -93,3 +93,19 @@ class DisplayFrameThread(Thread):
         cv2.destroyAllWindows()                                 #this closes all windows of display
         return
         
+
+
+def main():
+    semaphore = Semaphore()
+    
+    extractFrame = ExtractFramesThread(semaphore=semaphore)   #extract thread created
+    extractFrame.start()
+
+    convertGray = ConvertToGrayScaleThread(semaphore=semaphore)  #convert to gray thread created
+    convertGray.start()
+
+    displayFrame = DisplayFrameThread(semaphore=semaphore)    #display frame thread created
+    displayFrame.start()
+
+if __name__== "__main__":
+    main()
