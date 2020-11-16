@@ -8,26 +8,26 @@ class Queue():
         self.queue = []   #initializes a queue
         
         # two semaphores and a mutex to use per each queue
-        self.first = Semaphore(10) # max ten frames per queue
-        self.second = Semaphore(0) # waits til other thread calls release() 
+        self.empty = Semaphore(10) # max ten frames per queue
+        self.full = Semaphore(0) # waits til other thread calls release() 
         self.mutex = Lock()
         
     def put(self, frame):
         # acquiere first sempahore which would be realesed by another thread when consuming from the queue
-        self.first.acquire()
+        self.empty.acquire()
         self.mutex.acquire()
         self.queue.append(frame)
         self.mutex.release()
-        self.second.release() # if 10 has been acquiered, it will wait until consumers realese a permit
+        self.full.release() # if 10 has been acquiered, it will wait until consumers realese a permit
         return
     
     def get(self):
         # acquiere second Semaphore which would be realesed by another thread when producing to the queue
-        self.second.acquire()
+        self.full.acquire()
         self.mutex.acquire()
         frame = self.queue.pop(0)
         self.mutex.release()
-        self.first.release() # realese 1 permit that we use to add a frame to the first queue
+        self.empty.release() # realese 1 permit that we use to add a frame to the first queue
         return frame
     
     
